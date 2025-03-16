@@ -12,9 +12,29 @@
 # coding: utf-8
 
 import PySimpleGUI as sg
+import requests
 from datetime import datetime
 from pyautogui import size
-import platform # add chatGPT
+import platform  # add chatGPT
+
+API_KEY = "51eed4f60902080d2ff757833123f255"
+CITY = "Sayamashi"
+UNITS = "metric"
+
+
+def get_weather(city):
+    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units={UNITS}&lang=ja"
+    try:
+        response = requests.get(url)
+        data = response.json()
+        if response.status_code == 200:
+            weather = data["weather"][0]["description"]  # 天気の説明
+            temp = data["main"]["temp"]  # 気温
+            return f"{weather} {temp:.1f}°C"
+        else:
+            return "ERROR"
+    except Exception as e:
+        return "FAILED"
 
 
 def date_info(time_format, date_format):
@@ -24,8 +44,9 @@ def date_info(time_format, date_format):
     weekday = now.strftime("%a")
     return time, date, weekday
 
+
 # OSごとの時間・日付フォーマットの設定
-if platform.system() == 'Windows':
+if platform.system() == "Windows":
     time_format = "%H:%M:%S"
     date_format = "%Y/%#m/%#d"
 else:
@@ -34,7 +55,10 @@ else:
 
 layout = [
     [sg.Text(font=("impact", 50), text_color="gray", key="-time-")],
-    [sg.Text(font=("impact", 20), text_color="gray", key="-date-")],
+    [
+        sg.Text(font=("impact", 20), text_color="gray", key="-date-"),
+        sg.Text(font=("impact", 20), text_color="gray", key="-weather-"),
+    ],
 ]
 
 window = sg.Window(
@@ -49,6 +73,9 @@ window = sg.Window(
     alpha_channel=0.5,
 )
 
+# 天気を取得
+weather_info = get_weather(CITY)
+
 while True:
     event, values = window.read(timeout=1000, timeout_key="-timeout-")
     if event in [sg.WIN_CLOSED, "Exit"]:
@@ -57,6 +84,7 @@ while True:
         time, date, weekday = date_info(time_format, date_format)
         window["-time-"].update(time)
         window["-date-"].update(f"{date} {weekday}")
+        weather_info = get_weather(CITY)
+        window["-weather-"].update(weather_info)
 
 window.close()
-
