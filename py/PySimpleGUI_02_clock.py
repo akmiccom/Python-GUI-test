@@ -8,16 +8,17 @@
 # In[5]:
 
 
-#!/usr/bin/env python
+# !/usr/bin/env python
 # coding: utf-8
 
 import PySimpleGUI as sg
 import requests
+import os
 from datetime import datetime
 from pyautogui import size
 import platform  # add chatGPT
 
-API_KEY = ""
+API_KEY = os.getenv('OPEN_WEATHER_MAP_API_KEY')
 CITY = "Sayamashi"
 UNITS = "metric"
 
@@ -75,16 +76,27 @@ window = sg.Window(
 
 # 天気を取得
 weather_info = get_weather(CITY)
+weather_update_interval = 600000
+last_weather_update = datetime.now()
 
 while True:
     event, values = window.read(timeout=1000, timeout_key="-timeout-")
     if event in [sg.WIN_CLOSED, "Exit"]:
         break
-    elif event in "-timeout-":
+    elif event == "-timeout-":
         time, date, weekday = date_info(time_format, date_format)
         window["-time-"].update(time)
         window["-date-"].update(f"{date} {weekday}")
-        weather_info = get_weather(CITY)
-        window["-weather-"].update(weather_info)
+        if (datetime.now() - last_weather_update).seconds >= weather_update_interval / 1000:
+            weather_info = get_weather(CITY)
+            window["-weather-"].update(weather_info)
+            last_weather_update = datetime.now()
+    elif event in ["-time-", "-date-", "-weather-"]:
+        window[event].update(background_color="darkgray")
+    else:
+        for key in ["-time-", "-date-", "-weather-"]:
+            window[key].update(background_color="lightgray")
+
+window.close()
 
 window.close()
