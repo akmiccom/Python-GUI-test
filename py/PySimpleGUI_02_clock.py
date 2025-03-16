@@ -17,7 +17,7 @@ from datetime import datetime
 from pyautogui import size
 import platform  # add chatGPT
 
-API_KEY = "51eed4f60902080d2ff757833123f255"
+API_KEY = ""
 CITY = "Sayamashi"
 UNITS = "metric"
 
