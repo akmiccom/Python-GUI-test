@@ -92,14 +92,14 @@ while True:
         window["-date-"].update(f"{date} {weekday}")
 
         if (datetime.now() - last_weather_update).seconds >= weather_update_interval / 1000:
-            weather_info = get_weather(CITY)
+            # weather_info = get_weather(CITY)
             window["-weather-"].update(weather_info)
             last_weather_update = datetime.now()
 
             # マウスポインターを動かす
-            moveRel(1, 0)
-            moveRel(-1, 0)
-            click(button="middle")
+            # moveRel(100, 0)
+            # moveRel(-100, 0)
+            # click(button="middle")
 
     elif event in ["-time-", "-date-", "-weather-"]:
         window[event].update(background_color="darkgray")
