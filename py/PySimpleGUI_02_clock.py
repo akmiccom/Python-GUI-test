@@ -15,7 +15,7 @@ import PySimpleGUI as sg
 import requests
 import os
 from datetime import datetime
-from pyautogui import size
+from pyautogui import size, moveRel
 import platform  # add chatGPT
 
 API_KEY = os.getenv('OPEN_WEATHER_MAP_API_KEY')
@@ -76,7 +76,7 @@ window = sg.Window(
 
 # 天気を取得
 weather_info = get_weather(CITY)
-weather_update_interval = 600000
+weather_update_interval = 60000 * 3
 last_weather_update = datetime.now()
 
 while True:
@@ -87,10 +87,16 @@ while True:
         time, date, weekday = date_info(time_format, date_format)
         window["-time-"].update(time)
         window["-date-"].update(f"{date} {weekday}")
+
         if (datetime.now() - last_weather_update).seconds >= weather_update_interval / 1000:
             weather_info = get_weather(CITY)
             window["-weather-"].update(weather_info)
             last_weather_update = datetime.now()
+
+            # マウスポインターを動かす
+            moveRel(1, 0)
+            moveRel(-1, 0)
+
     elif event in ["-time-", "-date-", "-weather-"]:
         window[event].update(background_color="darkgray")
     else:
