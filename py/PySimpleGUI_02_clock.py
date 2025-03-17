@@ -22,7 +22,6 @@ from dotenv import load_dotenv
 # .env ファイルを読み込む
 load_dotenv()
 API_KEY = os.getenv('WEATHER_COM_API_KEY')
-# API_KEY = "d72e40501e0e4315b5614355251703"
 CITY = "Tokyo"
 UNITS = "metric"
 
@@ -30,7 +29,7 @@ print(API_KEY)
 
 
 def get_weather(city):
-    # url = f"http://api.weatherapi.com/v1/current.json?key={API_KEY}&q={city}&lang=en"
+    url = f"http://api.weatherapi.com/v1/current.json?key={API_KEY}&q={city}&lang=en"
     try:
         response = requests.get(url)
         data = response.json()
