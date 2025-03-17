@@ -15,22 +15,28 @@ import PySimpleGUI as sg
 import requests
 import os
 from datetime import datetime
-from pyautogui import size, moveRel
-import platform  # add chatGPT
+from pyautogui import size, moveRel, click
+import platform
+from dotenv import load_dotenv
 
-API_KEY = os.getenv('OPEN_WEATHER_MAP_API_KEY')
-CITY = "Sayamashi"
+# .env ファイルを読み込む
+load_dotenv()
+API_KEY = os.getenv('WEATHER_COM_API_KEY')
+# API_KEY = "d72e40501e0e4315b5614355251703"
+CITY = "Tokyo"
 UNITS = "metric"
+
+print(API_KEY)
 
 
 def get_weather(city):
-    url = f"http://api.openweathermap.org/data/2.5/weather?q={city}&appid={API_KEY}&units={UNITS}&lang=ja"
+    # url = f"http://api.weatherapi.com/v1/current.json?key={API_KEY}&q={city}&lang=en"
     try:
         response = requests.get(url)
         data = response.json()
-        if response.status_code == 200:
-            weather = data["weather"][0]["description"]  # 天気の説明
-            temp = data["main"]["temp"]  # 気温
+        if "current" in data:
+            weather = data["current"]["condition"]["text"]  # 天気の説明
+            temp = data["current"]["temp_c"]  # 気温（摂氏）
             return f"{weather} {temp:.1f}°C"
         else:
             return "ERROR"
@@ -56,16 +62,14 @@ else:
 
 layout = [
     [sg.Text(font=("impact", 50), text_color="gray", key="-time-")],
-    [
-        sg.Text(font=("impact", 20), text_color="gray", key="-date-"),
-        sg.Text(font=("impact", 20), text_color="gray", key="-weather-"),
-    ],
-]
+    [sg.Text(font=("impact", 20), text_color="gray", key="-date-")],
+    [sg.Text(font=("impact", 20), text_color="gray", key="-weather-")],
+    ]
 
 window = sg.Window(
     title="clock",
     layout=layout,
-    location=(size()[0] - 450, size()[1] - 380),
+    location=(size()[0] - 450, size()[1] - 450),
     transparent_color=sg.theme_background_color(),
     no_titlebar=True,
     right_click_menu=["menu", ["Exit", "!Properties"]],
@@ -76,7 +80,7 @@ window = sg.Window(
 
 # 天気を取得
 weather_info = get_weather(CITY)
-weather_update_interval = 60000 * 3
+weather_update_interval = 60000 * 30
 last_weather_update = datetime.now()
 
 while True:
@@ -96,6 +100,7 @@ while True:
             # マウスポインターを動かす
             moveRel(1, 0)
             moveRel(-1, 0)
+            click(button="middle")
 
     elif event in ["-time-", "-date-", "-weather-"]:
         window[event].update(background_color="darkgray")
