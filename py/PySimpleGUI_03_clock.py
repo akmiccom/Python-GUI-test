@@ -18,26 +18,35 @@ from datetime import datetime
 from pyautogui import size
 import platform
 from dotenv import load_dotenv
+from io import BytesIO
+from PIL import Image
+import certifi
 
 # .env ファイルを読み込む
 load_dotenv()
-API_KEY = os.getenv('WEATHER_COM_API_KEY')
+API_KEY = os.getenv("WEATHER_COM_API_KEY")
 CITY = "Sayama"
 UNITS = "metric"
+URL = r"http://api.weatherapi.com/v1/current.json"
+
+print(API_KEY)
 
 
 def get_weather(city):
-    url = f"http://api.weatherapi.com/v1/current.json?key={API_KEY}&q={city}&lang=en"
+    params = {"key": API_KEY, "q": city, "lang": "en"}
     try:
-        response = requests.get(url)
+        response = requests.get(URL, params=params)
         data = response.json()
         if "current" in data:
-            weather = data["current"]["condition"]["text"]  # 天気の説明
-            temp = data["current"]["temp_c"]  # 気温（摂氏）
-            return f"{weather} {temp:.0f}°C"
+            weather = data["current"]["condition"]["text"]
+            temp = data["current"]["temp_c"]
+            icon_url = "https:" + data["current"]["condition"]["icon"]
+            print(icon_url)
+            return f"{weather} {temp:.0f}°C", icon_url
         else:
             return "ERROR"
     except Exception as e:
+        print(e)
         return "FAILED"
 
 
@@ -49,6 +58,15 @@ def date_info(time_format, date_format):
     return time, date, weekday
 
 
+def download_image(icon_url):
+    try:
+        response = requests.get(icon_url, verify=certifi.where())
+        return Image.open(BytesIO(response.content))
+    except Exception as e:
+        print(e)
+        return None
+
+
 # OSごとの時間・日付フォーマットの設定
 if platform.system() == "Windows":
     time_format = "%H:%M:%S"
@@ -57,12 +75,14 @@ else:
     time_format = "%H:%M:%S"
     date_format = "%Y/%m/%d"
 
+# Layout
 layout = [
     [sg.Text(font=("impact", 50), text_color="gray", key="-time-")],
     [sg.Text(font=("impact", 20), text_color="gray", key="-date-")],
     [sg.Text(font=("impact", 20), text_color="gray", key="-weather-")],
-    ]
+]
 
+# Window
 window = sg.Window(
     title="clock",
     layout=layout,
@@ -76,9 +96,15 @@ window = sg.Window(
 )
 
 # 天気を取得
-weather_info = get_weather(CITY)
-weather_update_interval = 60000 * 10
+weather_info, icon_url = get_weather(CITY)
+weather_update_interval = 60000 * 1
 last_weather_update = datetime.now()
+
+if icon_url:
+    weather_icon = download_image(icon_url)
+    if weather_icon:
+        weather_icon.thumbnail((50, 50))  # アイコンサイズ調整
+        window["-icon-"].update(data=weather_icon)
 
 while True:
     event, values = window.read(timeout=1000, timeout_key="-timeout-")
@@ -89,20 +115,19 @@ while True:
         window["-time-"].update(time)
         window["-date-"].update(f"{date} {weekday}")
 
-        if (datetime.now() - last_weather_update).seconds >= weather_update_interval / 1000:
+        if (
+            datetime.now() - last_weather_update
+        ).seconds >= weather_update_interval / 1000:
             weather_info = get_weather(CITY)
             window["-weather-"].update(weather_info)
             last_weather_update = datetime.now()
-
-            # マウスポインターを動かす
-            # moveRel(100, 0)
-            # moveRel(-100, 0)
-            # click(button="middle")
+            if icon_url:
+                weather_icon = download_image(icon_url)
+                if weather_icon:
+                    weather_icon.thumbnail((50, 50))
+                    window["-icon-"].update(data=weather_icon)
 
     elif event in ["-time-", "-date-", "-weather-"]:
         window[event].update(background_color="darkgray")
-    else:
-        for key in ["-time-", "-date-", "-weather-"]:
-            window[key].update(background_color="lightgray")
 
 window.close()
